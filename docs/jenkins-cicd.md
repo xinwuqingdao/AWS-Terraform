@@ -44,6 +44,8 @@ The credential user/role must be allowed to:
    - `AWS_REGION`: defaults to `us-east-1`
    - `AWS_CREDENTIALS_ID`: defaults to `aws-jenkins`
 
+> Frontend deployment stages run only when `TF_ACTION=apply` and `DEPLOY_FRONTEND=true`.
+
 ## Typical Runs
 
 - Infra plan only:

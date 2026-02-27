@@ -62,14 +62,22 @@ pipeline {
 
     stage('Resolve Deploy Targets') {
       when {
-        expression { params.DEPLOY_FRONTEND }
+        expression { params.DEPLOY_FRONTEND && params.TF_ACTION == 'apply' }
       }
       steps {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDENTIALS_ID]]) {
           dir("${params.TF_DIR}") {
             script {
-              env.FRONTEND_BUCKET_NAME = sh(script: 'terraform output -raw frontend_bucket_name', returnStdout: true).trim()
-              env.CLOUDFRONT_DISTRIBUTION_ID = sh(script: 'terraform output -raw distribution_id', returnStdout: true).trim()
+              env.FRONTEND_BUCKET_NAME = sh(script: 'terraform output -raw frontend_bucket_name 2>/dev/null || true', returnStdout: true).trim()
+              env.CLOUDFRONT_DISTRIBUTION_ID = sh(script: 'terraform output -raw distribution_id 2>/dev/null || true', returnStdout: true).trim()
+
+              if (!env.FRONTEND_BUCKET_NAME || !env.FRONTEND_BUCKET_NAME.matches('^[a-zA-Z0-9.\\-_]{1,255}$')) {
+                error('Terraform output frontend_bucket_name is missing/invalid. Run Terraform apply first and verify outputs in ' + params.TF_DIR)
+              }
+
+              if (!env.CLOUDFRONT_DISTRIBUTION_ID || !env.CLOUDFRONT_DISTRIBUTION_ID.matches('^[A-Z0-9]{10,20}$')) {
+                error('Terraform output distribution_id is missing/invalid. Run Terraform apply first and verify outputs in ' + params.TF_DIR)
+              }
             }
           }
         }
@@ -78,7 +86,7 @@ pipeline {
 
     stage('Deploy Frontend To S3') {
       when {
-        expression { params.DEPLOY_FRONTEND }
+        expression { params.DEPLOY_FRONTEND && params.TF_ACTION == 'apply' }
       }
       steps {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDENTIALS_ID]]) {
@@ -98,6 +106,11 @@ else
   DIST_PATH="${DIST_ROOT}"
 fi
 
+if [ -z "${FRONTEND_BUCKET_NAME:-}" ]; then
+  echo "FRONTEND_BUCKET_NAME is empty; Terraform outputs were not resolved."
+  exit 1
+fi
+
 aws s3 sync "${DIST_PATH}/" "s3://${FRONTEND_BUCKET_NAME}/" --delete
 '''
           }
@@ -107,7 +120,7 @@ aws s3 sync "${DIST_PATH}/" "s3://${FRONTEND_BUCKET_NAME}/" --delete
 
     stage('CloudFront Invalidation') {
       when {
-        expression { params.DEPLOY_FRONTEND }
+        expression { params.DEPLOY_FRONTEND && params.TF_ACTION == 'apply' }
       }
       steps {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDENTIALS_ID]]) {
