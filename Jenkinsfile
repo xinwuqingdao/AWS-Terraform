@@ -9,7 +9,7 @@ pipeline {
   parameters {
     choice(name: 'TF_ACTION', choices: ['plan', 'apply'], description: 'Terraform action to run')
     booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: true, description: 'Deploy Angular dist to S3 + invalidate CloudFront')
-    string(name: 'TF_DIR', defaultValue: 'infrastructures/enviroments/dev', description: 'Terraform environment directory')
+    string(name: 'TF_DIR', defaultValue: 'infrastructures/environments/dev', description: 'Terraform environment directory')
     string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region')
     string(name: 'AWS_CREDENTIALS_ID', defaultValue: 'aws-jenkins', description: 'Jenkins AWS credential ID')
   }

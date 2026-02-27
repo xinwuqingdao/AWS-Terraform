@@ -50,7 +50,7 @@ User → CloudFront (HTTPS) → S3 Bucket (private, OAC-only access)
 
 ```
 infrastructures/
-├── enviroments/
+├── environments/
 │   └── dev/
 │       ├── main.tf          # Provider & backend config
 │       ├── variables.tf     # Environment variables
@@ -132,7 +132,7 @@ Upload files to the S3 bucket and they'll be served through CloudFront with HTTP
 A ready-to-use pipeline is included in `Jenkinsfile`.
 
 - Builds Angular app under `frontend/`
-- Runs Terraform plan/apply for `infrastructures/enviroments/dev`
+- Runs Terraform plan/apply for `infrastructures/environments/dev`
 - Deploys frontend to S3
 - Invalidates CloudFront cache
 
