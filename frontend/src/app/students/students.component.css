@@ -1,0 +1,19 @@
+.students-page {
+	max-width: 900px;
+	margin: 24px auto;
+	padding: 0 16px;
+}
+
+.student-list {
+	list-style: none;
+	padding: 0;
+	margin: 16px 0 0;
+	display: grid;
+	gap: 12px;
+}
+
+.student-item {
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	padding: 12px;
+}

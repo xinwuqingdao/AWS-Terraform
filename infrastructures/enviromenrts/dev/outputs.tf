@@ -1,0 +1,14 @@
+output "frontend_bucket_name" {
+  description = "Frontend S3 bucket name"
+  value       = module.s3.frontend_bucket_name
+}
+
+output "distribution_id" {
+  description = "CloudFront distribution ID"
+  value       = module.cloudfront.distribution_id
+}
+
+output "distribution_domain_name" {
+  description = "CloudFront distribution domain name"
+  value       = module.cloudfront.distribution_domain_name
+}

@@ -1,0 +1,12 @@
+<section class="students-page">
+	<h1>Student List</h1>
+
+	<ul class="student-list">
+		<li *ngFor="let student of students" class="student-item">
+			<div><strong>ID:</strong> {{ student.id }}</div>
+			<div><strong>Name:</strong> {{ student.name }}</div>
+			<div><strong>Age:</strong> {{ student.age }}</div>
+			<div><strong>Major:</strong> {{ student.major }}</div>
+		</li>
+	</ul>
+</section>

@@ -126,3 +126,14 @@ Your site will be accessible at the CloudFront URL output, e.g.:
 https://d1234abcdef.cloudfront.net
 
 Upload files to the S3 bucket and they'll be served through CloudFront with HTTPS automatically.
+
+## CI/CD (Jenkins)
+
+A ready-to-use pipeline is included in `Jenkinsfile`.
+
+- Builds Angular app under `frontend/`
+- Runs Terraform plan/apply for `infrastructures/enviromenrts/dev`
+- Deploys frontend to S3
+- Invalidates CloudFront cache
+
+Setup details: see `docs/jenkins-cicd.md`
