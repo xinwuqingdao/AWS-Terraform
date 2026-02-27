@@ -3,7 +3,7 @@
 This repository includes a root `Jenkinsfile` that handles:
 
 1. Angular build (`frontend`)
-2. Terraform plan/apply (`infrastructures/enviromenrts/dev` by default)
+2. Terraform plan/apply (`infrastructures/enviroments/dev` by default)
 3. Frontend deploy to S3
 4. CloudFront invalidation
 
@@ -40,7 +40,7 @@ The credential user/role must be allowed to:
 4. Run with parameters:
    - `TF_ACTION`: `plan` or `apply`
    - `DEPLOY_FRONTEND`: `true`/`false`
-   - `TF_DIR`: defaults to `infrastructures/enviromenrts/dev`
+   - `TF_DIR`: defaults to `infrastructures/enviroments/dev`
    - `AWS_REGION`: defaults to `us-east-1`
    - `AWS_CREDENTIALS_ID`: defaults to `aws-jenkins`
 
