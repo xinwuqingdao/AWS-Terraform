@@ -216,10 +216,12 @@ aws s3 sync "${DIST_PATH}/" "s3://${FRONTEND_BUCKET_NAME}/" --delete
       echo "TF action: ${params.TF_ACTION}"
       echo "Frontend deploy: ${params.DEPLOY_FRONTEND}"
       echo "Backend deploy: ${params.DEPLOY_BACKEND}"
-      if (params.TF_ACTION == 'apply') {
-        echo "Cognito issuer: ${env.COGNITO_USER_POOL_ISSUER_URL}"
-        echo "Cognito client id: ${env.COGNITO_USER_POOL_CLIENT_ID}"
-        echo "WAF ACL: ${env.WAF_WEB_ACL_ARN}"
+      script {
+        if (params.TF_ACTION == 'apply') {
+          echo "Cognito issuer: ${env.COGNITO_USER_POOL_ISSUER_URL}"
+          echo "Cognito client id: ${env.COGNITO_USER_POOL_CLIENT_ID}"
+          echo "WAF ACL: ${env.WAF_WEB_ACL_ARN}"
+        }
       }
     }
   }
