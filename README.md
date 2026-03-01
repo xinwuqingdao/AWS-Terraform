@@ -137,3 +137,23 @@ A ready-to-use pipeline is included in `Jenkinsfile`.
 - Invalidates CloudFront cache
 
 Setup details: see `docs/jenkins-cicd.md`
+
+## Revision 3 — Backend on ECS + ALB
+
+A backend module is added under `infrastructures/modules/backend_service/` to deploy the Spring Boot API to ECS Fargate behind an Application Load Balancer.
+
+### Backend Resources
+
+- `aws_lb` / `aws_lb_listener` / `aws_lb_target_group` for public HTTP entry
+- `aws_ecs_cluster` for backend workloads
+- `aws_ecs_task_definition` for container runtime definition
+- `aws_ecs_service` for desired task count and ALB integration
+- `aws_ecr_repository` to store backend Docker images
+
+### Backend Outputs
+
+- `backend_service_url`
+- `backend_alb_dns_name`
+- `backend_ecr_repository_url`
+- `backend_ecs_cluster_name`
+- `backend_ecs_service_name`

@@ -1,6 +1,8 @@
 <section class="students-page">
 	<h1>Student List</h1>
 
+	<p *ngIf="loadError">{{ loadError }}</p>
+
 	<ul class="student-list">
 		<li *ngFor="let student of students" class="student-item">
 			<div><strong>ID:</strong> {{ student.id }}</div>

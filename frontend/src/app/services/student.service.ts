@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 export interface Student {
   id: number;
@@ -11,19 +13,15 @@ export interface Student {
   providedIn: 'root'
 })
 export class StudentService {
-  private readonly students: Student[] = [
-    { id: 1, name: 'Alice Johnson', age: 20, major: 'Computer Science' },
-    { id: 2, name: 'Brian Lee', age: 21, major: 'Information Systems' },
-    { id: 3, name: 'Chloe Wang', age: 19, major: 'Mathematics' }
-  ];
+  private readonly baseUrl = 'http://localhost:8080/api/students';
 
-  constructor() { }
+  constructor(private readonly http: HttpClient) { }
 
-  getStudents(): Student[] {
-    return this.students;
+  getStudents(): Observable<Student[]> {
+    return this.http.get<Student[]>(`${this.baseUrl}/getStudentList`);
   }
 
-  getStudentById(id: number): Student | undefined {
-    return this.students.find(student => student.id === id);
+  getStudentById(id: number): Observable<Student> {
+    return this.http.get<Student>(`${this.baseUrl}/${id}`);
   }
 }

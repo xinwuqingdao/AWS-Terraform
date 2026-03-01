@@ -9,6 +9,7 @@ pipeline {
   parameters {
     choice(name: 'TF_ACTION', choices: ['plan', 'apply'], description: 'Terraform action to run')
     booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: true, description: 'Deploy Angular dist to S3 + invalidate CloudFront')
+    booleanParam(name: 'DEPLOY_BACKEND', defaultValue: true, description: 'Build backend image and deploy ECS service')
     string(name: 'TF_DIR', defaultValue: 'infrastructures/environments/dev', description: 'Terraform environment directory')
     string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region')
     string(name: 'AWS_CREDENTIALS_ID', defaultValue: 'aws-jenkins', description: 'Jenkins AWS credential ID')
@@ -31,6 +32,17 @@ pipeline {
         dir('frontend') {
           sh 'npm ci'
           sh 'npm run build'
+        }
+      }
+    }
+
+    stage('Build Backend JAR') {
+      when {
+        expression { params.DEPLOY_BACKEND }
+      }
+      steps {
+        dir('backend') {
+          sh 'mvn -DskipTests package'
         }
       }
     }
@@ -62,23 +74,69 @@ pipeline {
 
     stage('Resolve Deploy Targets') {
       when {
-        expression { params.DEPLOY_FRONTEND && params.TF_ACTION == 'apply' }
+        expression { (params.DEPLOY_FRONTEND || params.DEPLOY_BACKEND) && params.TF_ACTION == 'apply' }
       }
       steps {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDENTIALS_ID]]) {
           dir("${params.TF_DIR}") {
             script {
-              env.FRONTEND_BUCKET_NAME = sh(script: 'terraform output -raw frontend_bucket_name 2>/dev/null || true', returnStdout: true).trim()
-              env.CLOUDFRONT_DISTRIBUTION_ID = sh(script: 'terraform output -raw distribution_id 2>/dev/null || true', returnStdout: true).trim()
+              if (params.DEPLOY_FRONTEND) {
+                env.FRONTEND_BUCKET_NAME = sh(script: 'terraform output -raw frontend_bucket_name 2>/dev/null || true', returnStdout: true).trim()
+                env.CLOUDFRONT_DISTRIBUTION_ID = sh(script: 'terraform output -raw distribution_id 2>/dev/null || true', returnStdout: true).trim()
 
-              if (!env.FRONTEND_BUCKET_NAME || !env.FRONTEND_BUCKET_NAME.matches('^[a-zA-Z0-9.\\-_]{1,255}$')) {
-                error('Terraform output frontend_bucket_name is missing/invalid. Run Terraform apply first and verify outputs in ' + params.TF_DIR)
+                if (!env.FRONTEND_BUCKET_NAME || !env.FRONTEND_BUCKET_NAME.matches('^[a-zA-Z0-9.\\-_]{1,255}$')) {
+                  error('Terraform output frontend_bucket_name is missing/invalid. Run Terraform apply first and verify outputs in ' + params.TF_DIR)
+                }
+
+                if (!env.CLOUDFRONT_DISTRIBUTION_ID || !env.CLOUDFRONT_DISTRIBUTION_ID.matches('^[A-Z0-9]{10,20}$')) {
+                  error('Terraform output distribution_id is missing/invalid. Run Terraform apply first and verify outputs in ' + params.TF_DIR)
+                }
               }
 
-              if (!env.CLOUDFRONT_DISTRIBUTION_ID || !env.CLOUDFRONT_DISTRIBUTION_ID.matches('^[A-Z0-9]{10,20}$')) {
-                error('Terraform output distribution_id is missing/invalid. Run Terraform apply first and verify outputs in ' + params.TF_DIR)
+              if (params.DEPLOY_BACKEND) {
+                env.BACKEND_ECR_REPOSITORY_URL = sh(script: 'terraform output -raw backend_ecr_repository_url 2>/dev/null || true', returnStdout: true).trim()
+
+                if (!env.BACKEND_ECR_REPOSITORY_URL || !env.BACKEND_ECR_REPOSITORY_URL.contains('.dkr.ecr.')) {
+                  error('Terraform output backend_ecr_repository_url is missing/invalid. Run Terraform apply first and verify outputs in ' + params.TF_DIR)
+                }
               }
             }
+          }
+        }
+      }
+    }
+
+    stage('Build and Push Backend Image') {
+      when {
+        expression { params.DEPLOY_BACKEND && params.TF_ACTION == 'apply' }
+      }
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDENTIALS_ID]]) {
+          script {
+            env.BACKEND_IMAGE_TAG = "build-${env.BUILD_NUMBER}"
+            env.BACKEND_IMAGE_URI = "${env.BACKEND_ECR_REPOSITORY_URL}:${env.BACKEND_IMAGE_TAG}"
+          }
+
+          sh '''#!/usr/bin/env bash
+set -euo pipefail
+
+aws ecr get-login-password --region "${AWS_DEFAULT_REGION}" | docker login --username AWS --password-stdin "${BACKEND_ECR_REPOSITORY_URL}"
+
+docker build -t "${BACKEND_IMAGE_URI}" ./backend
+docker push "${BACKEND_IMAGE_URI}"
+'''
+        }
+      }
+    }
+
+    stage('Deploy Backend To ECS') {
+      when {
+        expression { params.DEPLOY_BACKEND && params.TF_ACTION == 'apply' }
+      }
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDENTIALS_ID]]) {
+          dir("${params.TF_DIR}") {
+            sh 'terraform apply -input=false -auto-approve -var="backend_image_uri=${BACKEND_IMAGE_URI}" -var="backend_desired_count=1"'
           }
         }
       }
@@ -135,6 +193,7 @@ aws s3 sync "${DIST_PATH}/" "s3://${FRONTEND_BUCKET_NAME}/" --delete
       echo 'Pipeline completed successfully.'
       echo "TF action: ${params.TF_ACTION}"
       echo "Frontend deploy: ${params.DEPLOY_FRONTEND}"
+      echo "Backend deploy: ${params.DEPLOY_BACKEND}"
     }
   }
 }
