@@ -37,3 +37,28 @@ output "backend_ecs_service_name" {
   description = "ECS service name for backend"
   value       = module.backend_service.backend_ecs_service_name
 }
+
+output "waf_web_acl_arn" {
+  description = "WAF Web ACL ARN associated with CloudFront"
+  value       = module.waf.web_acl_arn
+}
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  value       = module.cognito.user_pool_id
+}
+
+output "cognito_user_pool_issuer_url" {
+  description = "Cognito issuer URL used as OIDC authority"
+  value       = module.cognito.user_pool_issuer_url
+}
+
+output "cognito_user_pool_client_id" {
+  description = "Cognito app client ID"
+  value       = module.cognito.user_pool_client_id
+}
+
+output "cognito_hosted_ui_domain" {
+  description = "Cognito Hosted UI domain"
+  value       = module.cognito.hosted_ui_domain
+}

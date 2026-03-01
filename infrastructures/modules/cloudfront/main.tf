@@ -16,6 +16,11 @@ variable "backend_alb_domain_name" {
   description = "Backend ALB DNS name for API origin"
   type        = string
 }
+variable "web_acl_arn" {
+  description = "Optional WAFv2 Web ACL ARN to associate with CloudFront"
+  type        = string
+  default     = null
+}
 
 # --------------------------------------------------
 # Origin Access Control (OAC) — replaces legacy OAI
@@ -35,6 +40,7 @@ resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   default_root_object = "index.html"
   comment             = "S3 frontend - ${var.environment}"
+  web_acl_id          = var.web_acl_arn
 
   origin {
     domain_name              = var.s3_bucket_domain_name

@@ -35,3 +35,27 @@ variable "backend_desired_count" {
   type        = number
   default     = 0
 }
+
+variable "cognito_domain_prefix_base" {
+  description = "Base prefix for Cognito Hosted UI domain"
+  type        = string
+  default     = "s3-prototype-auth"
+}
+
+variable "cognito_additional_callback_urls" {
+  description = "Additional callback URLs for Cognito app client"
+  type        = list(string)
+  default     = []
+}
+
+variable "cognito_additional_logout_urls" {
+  description = "Additional logout URLs for Cognito app client"
+  type        = list(string)
+  default     = []
+}
+
+variable "cognito_oauth_scopes" {
+  description = "OAuth scopes for Cognito app client"
+  type        = list(string)
+  default     = ["openid", "email", "phone"]
+}

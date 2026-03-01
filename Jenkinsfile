@@ -72,6 +72,28 @@ pipeline {
       }
     }
 
+    stage('Resolve Auth and Security Outputs') {
+      when {
+        expression { params.TF_ACTION == 'apply' }
+      }
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDENTIALS_ID]]) {
+          dir("${params.TF_DIR}") {
+            script {
+              env.COGNITO_USER_POOL_ID = sh(script: 'terraform output -raw cognito_user_pool_id 2>/dev/null || true', returnStdout: true).trim()
+              env.COGNITO_USER_POOL_CLIENT_ID = sh(script: 'terraform output -raw cognito_user_pool_client_id 2>/dev/null || true', returnStdout: true).trim()
+              env.COGNITO_USER_POOL_ISSUER_URL = sh(script: 'terraform output -raw cognito_user_pool_issuer_url 2>/dev/null || true', returnStdout: true).trim()
+              env.WAF_WEB_ACL_ARN = sh(script: 'terraform output -raw waf_web_acl_arn 2>/dev/null || true', returnStdout: true).trim()
+
+              if (!env.COGNITO_USER_POOL_ID || !env.COGNITO_USER_POOL_CLIENT_ID || !env.COGNITO_USER_POOL_ISSUER_URL || !env.WAF_WEB_ACL_ARN) {
+                error('Cognito/WAF outputs are missing. Verify Terraform apply/import completed successfully in ' + params.TF_DIR)
+              }
+            }
+          }
+        }
+      }
+    }
+
     stage('Resolve Deploy Targets') {
       when {
         expression { (params.DEPLOY_FRONTEND || params.DEPLOY_BACKEND) && params.TF_ACTION == 'apply' }
@@ -194,6 +216,11 @@ aws s3 sync "${DIST_PATH}/" "s3://${FRONTEND_BUCKET_NAME}/" --delete
       echo "TF action: ${params.TF_ACTION}"
       echo "Frontend deploy: ${params.DEPLOY_FRONTEND}"
       echo "Backend deploy: ${params.DEPLOY_BACKEND}"
+      if (params.TF_ACTION == 'apply') {
+        echo "Cognito issuer: ${env.COGNITO_USER_POOL_ISSUER_URL}"
+        echo "Cognito client id: ${env.COGNITO_USER_POOL_CLIENT_ID}"
+        echo "WAF ACL: ${env.WAF_WEB_ACL_ARN}"
+      }
     }
   }
 }

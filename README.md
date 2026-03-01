@@ -157,3 +157,18 @@ A backend module is added under `infrastructures/modules/backend_service/` to de
 - `backend_ecr_repository_url`
 - `backend_ecs_cluster_name`
 - `backend_ecs_service_name`
+
+## Revision 4 — Cognito + WAF as Code
+
+Manual Cognito and WAF setup is now codified with Terraform modules:
+
+- `infrastructures/modules/cognito` creates User Pool, App Client, and Hosted UI domain
+- `infrastructures/modules/waf` creates a CloudFront WAFv2 Web ACL with AWS managed rules
+
+The `dev` environment wires these modules and exposes outputs for OIDC configuration:
+
+- `cognito_user_pool_id`
+- `cognito_user_pool_issuer_url`
+- `cognito_user_pool_client_id`
+- `cognito_hosted_ui_domain`
+- `waf_web_acl_arn`
