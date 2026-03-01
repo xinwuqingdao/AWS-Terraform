@@ -14,6 +14,7 @@ module "cloudfront" {
   s3_bucket_domain_name = module.s3.frontend_bucket_domain
   s3_bucket_id          = module.s3.frontend_bucket_name
   s3_bucket_arn         = module.s3.frontend_bucket_arn
+  backend_alb_domain_name = module.backend_service.backend_alb_dns_name
 }
 
 module "backend_service" {

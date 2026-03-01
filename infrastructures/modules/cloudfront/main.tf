@@ -12,6 +12,10 @@ variable "s3_bucket_id" {
 variable "s3_bucket_arn" {
   description = "ARN of the S3 bucket"
 }
+variable "backend_alb_domain_name" {
+  description = "Backend ALB DNS name for API origin"
+  type        = string
+}
 
 # --------------------------------------------------
 # Origin Access Control (OAC) — replaces legacy OAI
@@ -36,6 +40,39 @@ resource "aws_cloudfront_distribution" "this" {
     domain_name              = var.s3_bucket_domain_name
     origin_id                = "s3-frontend"
     origin_access_control_id = aws_cloudfront_origin_access_control.this.id
+  }
+
+  origin {
+    domain_name = var.backend_alb_domain_name
+    origin_id   = "backend-api"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/api/*"
+    target_origin_id       = "backend-api"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    compress               = true
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
+
+    forwarded_values {
+      query_string = true
+      headers      = ["*"]
+
+      cookies {
+        forward = "all"
+      }
+    }
   }
 
   default_cache_behavior {

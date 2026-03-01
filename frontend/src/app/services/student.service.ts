@@ -13,7 +13,7 @@ export interface Student {
   providedIn: 'root'
 })
 export class StudentService {
-  private readonly baseUrl = 'http://localhost:8080/api/students';
+  private readonly baseUrl = '/api/students';
 
   constructor(private readonly http: HttpClient) { }
 
