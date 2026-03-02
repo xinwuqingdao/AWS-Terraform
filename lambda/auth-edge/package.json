@@ -1,0 +1,15 @@
+{
+  "name": "auth-edge",
+  "version": "1.0.0",
+  "description": "Lambda@Edge viewer-request authorizer — validates Cognito RS256 JWTs",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node -e \"require('./index'); console.log('syntax OK');\""
+  },
+  "keywords": ["lambda", "edge", "cloudfront", "cognito", "jwt", "auth"],
+  "license": "MIT",
+  "dependencies": {}
+}

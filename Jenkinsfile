@@ -10,6 +10,7 @@ pipeline {
     choice(name: 'TF_ACTION', choices: ['plan', 'apply'], description: 'Terraform action to run')
     booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: true, description: 'Deploy Angular dist to S3 + invalidate CloudFront')
     booleanParam(name: 'DEPLOY_BACKEND', defaultValue: true, description: 'Build backend image and deploy ECS service')
+    booleanParam(name: 'DEPLOY_LAMBDA', defaultValue: true, description: 'Package Lambda@Edge auth function with Cognito config and update CloudFront association')
     string(name: 'TF_DIR', defaultValue: 'infrastructures/environments/dev', description: 'Terraform environment directory')
     string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region')
     string(name: 'AWS_CREDENTIALS_ID', defaultValue: 'aws-jenkins', description: 'Jenkins AWS credential ID')
@@ -88,6 +89,38 @@ pipeline {
               if (!env.COGNITO_USER_POOL_ID || !env.COGNITO_USER_POOL_CLIENT_ID || !env.COGNITO_USER_POOL_ISSUER_URL || !env.WAF_WEB_ACL_ARN) {
                 error('Cognito/WAF outputs are missing. Verify Terraform apply/import completed successfully in ' + params.TF_DIR)
               }
+            }
+          }
+        }
+      }
+    }
+
+    stage('Deploy Lambda@Edge') {
+      when {
+        expression { params.TF_ACTION == 'apply' && params.DEPLOY_LAMBDA }
+      }
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDENTIALS_ID]]) {
+          dir("${params.TF_DIR}") {
+            script {
+              // Re-apply targeting only lambda_edge + cloudfront now that Cognito IDs are known.
+              // This bakes USER_POOL_ID / CLIENT_ID into config.js, publishes a new
+              // Lambda version, and updates the CloudFront lambda_function_association
+              // to reference that immutable versioned ARN.
+              sh """
+terraform apply -input=false -auto-approve \\
+  -target=module.lambda_edge \\
+  -target=module.cloudfront \\
+  -var="cognito_user_pool_id=${env.COGNITO_USER_POOL_ID}" \\
+  -var="cognito_user_pool_client_id=${env.COGNITO_USER_POOL_CLIENT_ID}"
+"""
+              env.LAMBDA_EDGE_ARN     = sh(script: 'terraform output -raw lambda_edge_qualified_arn 2>/dev/null || true', returnStdout: true).trim()
+              env.LAMBDA_EDGE_VERSION = sh(script: 'terraform output -raw lambda_edge_version 2>/dev/null || true', returnStdout: true).trim()
+
+              if (!env.LAMBDA_EDGE_ARN) {
+                error('lambda_edge_qualified_arn output is missing after deploy. Verify Terraform apply succeeded in ' + params.TF_DIR)
+              }
+              echo "Lambda@Edge deployed: ${env.LAMBDA_EDGE_ARN} (version ${env.LAMBDA_EDGE_VERSION})"
             }
           }
         }
@@ -221,6 +254,10 @@ aws s3 sync "${DIST_PATH}/" "s3://${FRONTEND_BUCKET_NAME}/" --delete
           echo "Cognito issuer: ${env.COGNITO_USER_POOL_ISSUER_URL}"
           echo "Cognito client id: ${env.COGNITO_USER_POOL_CLIENT_ID}"
           echo "WAF ACL: ${env.WAF_WEB_ACL_ARN}"
+          if (params.DEPLOY_LAMBDA) {
+            echo "Lambda@Edge ARN: ${env.LAMBDA_EDGE_ARN}"
+            echo "Lambda@Edge version: ${env.LAMBDA_EDGE_VERSION}"
+          }
         }
       }
     }

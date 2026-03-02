@@ -21,6 +21,11 @@ variable "web_acl_arn" {
   type        = string
   default     = null
 }
+variable "auth_lambda_qualified_arn" {
+  description = "Optional versioned ARN of the Lambda@Edge auth function (Viewer Request)"
+  type        = string
+  default     = null
+}
 
 # --------------------------------------------------
 # Origin Access Control (OAC) — replaces legacy OAI
@@ -79,6 +84,15 @@ resource "aws_cloudfront_distribution" "this" {
         forward = "all"
       }
     }
+
+    dynamic "lambda_function_association" {
+      for_each = var.auth_lambda_qualified_arn != null ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        lambda_arn   = var.auth_lambda_qualified_arn
+        include_body = false
+      }
+    }
   }
 
   default_cache_behavior {
@@ -91,6 +105,15 @@ resource "aws_cloudfront_distribution" "this" {
     forwarded_values {
       query_string = false
       cookies { forward = "none" }
+    }
+
+    dynamic "lambda_function_association" {
+      for_each = var.auth_lambda_qualified_arn != null ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        lambda_arn   = var.auth_lambda_qualified_arn
+        include_body = false
+      }
     }
   }
 

@@ -59,3 +59,15 @@ variable "cognito_oauth_scopes" {
   type        = list(string)
   default     = ["openid", "email", "phone"]
 }
+
+variable "cognito_user_pool_id" {
+  description = "Existing Cognito User Pool ID (used by Lambda@Edge). Set after first apply or terraform import."
+  type        = string
+  default     = ""
+}
+
+variable "cognito_user_pool_client_id" {
+  description = "Existing Cognito App Client ID (used by Lambda@Edge). Set after first apply or terraform import."
+  type        = string
+  default     = ""
+}

@@ -58,6 +58,21 @@ output "cognito_user_pool_client_id" {
   value       = module.cognito.user_pool_client_id
 }
 
+output "lambda_edge_qualified_arn" {
+  description = "Versioned Lambda@Edge ARN attached to CloudFront viewer-request"
+  value       = module.lambda_edge.lambda_qualified_arn
+}
+
+output "lambda_edge_version" {
+  description = "Published Lambda@Edge version number"
+  value       = module.lambda_edge.lambda_version
+}
+
+output "lambda_edge_function_name" {
+  description = "Lambda@Edge function name"
+  value       = module.lambda_edge.lambda_function_name
+}
+
 output "cognito_hosted_ui_domain" {
   description = "Cognito Hosted UI domain"
   value       = module.cognito.hosted_ui_domain
