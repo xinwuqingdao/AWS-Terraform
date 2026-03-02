@@ -14,7 +14,11 @@ terraform.rc
 
 # Sensitive variable files
 *.tfvars
+!terraform.tfvars
 !terraform.tfvars.example
+
+# Terraform-generated Lambda zip artifacts
+**/dist/*.zip
 
 # IDE
 .vscode/

@@ -1,0 +1,17 @@
+# =============================================================
+# Dev environment — variable values example
+# Copy to terraform.tfvars and fill in real values.
+# terraform.tfvars is gitignored; this file is safe to commit.
+# =============================================================
+
+aws_region  = "us-east-1"
+environment = "dev"
+
+# ── Cognito ───────────────────────────────────────────────────
+# Required by module.lambda_edge to bake Cognito config into config.js.
+# Get these from: terraform output (after cognito apply) or AWS Console.
+cognito_user_pool_id        = "us-east-1_XXXXXXXXX"
+cognito_user_pool_client_id = "XXXXXXXXXXXXXXXXXXXXXXXXXX"
+cognito_domain_prefix_base  = "s3-prototype-auth"
+
+cognito_oauth_scopes = ["openid", "email", "phone"]
