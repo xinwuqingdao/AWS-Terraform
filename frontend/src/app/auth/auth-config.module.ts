@@ -6,10 +6,10 @@ import { AuthCallbackComponent } from './auth-callback-component/auth-callback-c
 @NgModule({
     imports: [AuthModule.forRoot({
         config: {
-              authority: 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_q9Xms5GrK',
+              authority: 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Y77NCkU0t',
               redirectUrl: window.location.origin + '/auth/callback',
               postLogoutRedirectUri: window.location.origin,
-              clientId: '747q2lrgclnc0r346dtpcn45b3',
+              clientId: '1gh7jsrdee4oo85lcl3g8kqqvf',
               scope: 'phone openid email', // 'openid profile offline_access ' + your scopes
               responseType: 'code',
               silentRenew: true,
